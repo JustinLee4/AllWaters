@@ -6,7 +6,7 @@
 
 
 double hash_spacing = 3;
-double grid_spacing = .5;
+double grid_spacing = .25;
 double water_diameter = 2.5;
 double cutoff_distance = 3.5;
 
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]){
 
     std::cout << "-> Entering vectortopdb" << std::endl;
     
-    vectortopdb(watervector, "waters-05-8OM1.pdb");
+    vectortopdb(watervector, "8OM1-waters-25A-aa-cutoff35.pdb");
 
     std::cout << "-> Success" << std::endl;
 

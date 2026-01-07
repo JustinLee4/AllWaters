@@ -134,20 +134,19 @@ void vectortopdb(const std::vector<Atom> &atomvector, std::string output_filenam
 
     for(int i = 0; i < atomvector.size(); i++) {
         std::array<double, 3> pos = atomvector[i].getCoords();
+        int z = i + 1;
+        if( z > 99999) {
+            z = 99999;
+        }
 
         out_file << "HETATM"                                   // [ 1- 6] Record
-                << std::setw(5) << std::right << i+1          // [ 7-11] Serial
+                << std::setw(5) << std::right << z         // [ 7-11] Serial
                 << " "                                        // [12]    Blank
-                // FIX STARTS HERE
                 << " "                                        // [13]    Space (standard for Element O)
-                << std::setw(3) << std::left << atomvector[i].get_atomname() 
-                                                            // [14-16] Name "O  " (padded to 3)
-                // FIX ENDS HERE (Total width 1+3=4)
-                
-                << ""                                         // [17]    AltLoc (Removed extra space here!)
+                << std::setw(3) << std::left << atomvector[i].get_atomname() // [14-16] Name "O  " (padded to 3)
                 << std::setw(3) << std::right << atomvector[i].get_resname() // [18-20] ResName
                 << "  "                                       // [21-22] Chain ID (A) + Blank
-                << std::setw(4) << std::right << i + 1        // [23-26] ResSeq
+                << std::setw(4) << std::right << z       // [23-26] ResSeq
                 << "    "                                     // [27-30] Code + Blanks
                 << std::setw(8) << std::right << pos[0]       // [31-38] X
                 << std::setw(8) << std::right << pos[1]       // [39-46] Y
