@@ -52,6 +52,93 @@ Vec3 indextoVec3(int index, int dimX, int dimY, int dimZ, Vec3 minBound, double 
     return vector;
 }
 
+// void SeparateGridPoints(
+//     const std::vector<Vertex>& surfaceVertices,
+//     Vec3 minBound,
+//     Vec3 maxBound,
+//     float spacing,
+//     float searchRadius,
+//     std::vector<Vec3>& outInside, 
+//     std::vector<Vec3>& outOutside
+// ) {
+    
+//     int dimX = static_cast<int>(std::ceil((maxBound.x - minBound.x) / spacing));
+//     int dimY = static_cast<int>(std::ceil((maxBound.y - minBound.y) / spacing));
+//     int dimZ = static_cast<int>(std::ceil((maxBound.z - minBound.z) / spacing));
+
+//     size_t totalCells = (size_t)dimX * dimY * dimZ;
+    
+//     std::vector<GridCellInfo> grid(totalCells);
+
+//     float searchRadiusSq = searchRadius * searchRadius;
+//     int searchRadius_cells = static_cast<int>(std::ceil(searchRadius / spacing));
+
+//     for(int i = 0; i < surfaceVertices.size(); i++){
+//         const Vertex& vert = surfaceVertices[i];
+        
+//         int cx = static_cast<int>(std::floor((vert.position.x - minBound.x) / spacing));
+//         int cy = static_cast<int>(std::floor((vert.position.y - minBound.y) / spacing));
+//         int cz = static_cast<int>(std::floor((vert.position.z - minBound.z) / spacing));
+
+//         for (int z = cz - searchRadius_cells; z <= cz + searchRadius_cells; z++) {
+//             for (int y = cy - searchRadius_cells; y <= cy + searchRadius_cells; y++) {
+//                 for (int x = cx - searchRadius_cells; x <= cx + searchRadius_cells; x++) {   
+                    
+//                     if(x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) {
+//                         continue;
+//                     }
+
+//                     Vec3 gridPos;
+//                     gridPos.x = minBound.x + (x * spacing);
+//                     gridPos.y = minBound.y + (y * spacing);
+//                     gridPos.z = minBound.z + (z * spacing);
+
+//                     double distanceSq = (gridPos - vert.position).lengthSq();
+
+//                     if(distanceSq <= searchRadiusSq) {
+                        
+//                         size_t idx = (size_t)z * (dimX * dimY) + (size_t)y * dimX + (size_t)x;
+
+//                         if (distanceSq < grid[idx].minDistSq) {
+//                             grid[idx].closestVertexIndex = i;
+//                             grid[idx].minDistSq = distanceSq;
+//                         }
+//                     }
+//                 }
+//             }
+//         }
+//     }
+
+//     // --- PHASE 2: CLASSIFY ---
+//     for(int z = 0; z < dimZ; z++) {
+//         for(int y = 0; y < dimY; y++) {
+//             for(int x = 0; x < dimX; x++) {
+                
+//                 size_t i = (size_t)z * (dimX * dimY) + (size_t)y * dimX + (size_t)x;
+
+//                 if(grid[i].closestVertexIndex != -1){
+                    
+//                     Vec3 test_point;
+//                     test_point.x = minBound.x + (x * spacing);
+//                     test_point.y = minBound.y + (y * spacing);
+//                     test_point.z = minBound.z + (z * spacing);
+
+//                     const Vertex& closestVert = surfaceVertices[grid[i].closestVertexIndex];
+//                     Vec3 dir = test_point - closestVert.position;
+                    
+//                     // Dot Product check
+//                     float dotproduct = closestVert.normal.dot(dir);
+
+//                     if (dotproduct < 0) {
+//                         outInside.push_back(test_point);
+//                     } else {
+//                         outOutside.push_back(test_point);
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 void SeparateGridPoints(
     const std::vector<Vertex>& surfaceVertices,
     Vec3 minBound,
@@ -61,75 +148,103 @@ void SeparateGridPoints(
     std::vector<Vec3>& outInside, 
     std::vector<Vec3>& outOutside
 ) {
-    
+    // --- SETUP GRID DIMENSIONS ---
     int dimX = static_cast<int>(std::ceil((maxBound.x - minBound.x) / spacing));
     int dimY = static_cast<int>(std::ceil((maxBound.y - minBound.y) / spacing));
     int dimZ = static_cast<int>(std::ceil((maxBound.z - minBound.z) / spacing));
-
-    size_t totalCells = (size_t)dimX * dimY * dimZ;
     
-    std::vector<GridCellInfo> grid(totalCells);
+    size_t totalCells = (size_t)dimX * dimY * dimZ;
+
+    // 1. ALLOCATE: One large contiguous block
+    // 50M cells * ~30 bytes = ~1.5 GB RAM. Safe for modern machines.
+    std::vector<CellVotes> grid(totalCells);
 
     float searchRadiusSq = searchRadius * searchRadius;
     int searchRadius_cells = static_cast<int>(std::ceil(searchRadius / spacing));
 
+    // --- PHASE 1: COLLECT CANDIDATES (SCATTER) ---
+    // Iterate over surface vertices and "scatter" them into nearby grid cells
     for(int i = 0; i < surfaceVertices.size(); i++){
         const Vertex& vert = surfaceVertices[i];
         
+        // Find which cell this vertex falls into
         int cx = static_cast<int>(std::floor((vert.position.x - minBound.x) / spacing));
         int cy = static_cast<int>(std::floor((vert.position.y - minBound.y) / spacing));
         int cz = static_cast<int>(std::floor((vert.position.z - minBound.z) / spacing));
 
+        // Search neighboring cells within radius
         for (int z = cz - searchRadius_cells; z <= cz + searchRadius_cells; z++) {
             for (int y = cy - searchRadius_cells; y <= cy + searchRadius_cells; y++) {
                 for (int x = cx - searchRadius_cells; x <= cx + searchRadius_cells; x++) {   
                     
-                    if(x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) {
-                        continue;
-                    }
+                    // Bounds Check
+                    if(x < 0 || x >= dimX || y < 0 || y >= dimY || z < 0 || z >= dimZ) continue;
 
+                    // Calculate Grid Point Position
                     Vec3 gridPos;
                     gridPos.x = minBound.x + (x * spacing);
                     gridPos.y = minBound.y + (y * spacing);
                     gridPos.z = minBound.z + (z * spacing);
 
-                    double distanceSq = (gridPos - vert.position).lengthSq();
+                    // Quick Box Check (Avoid sqrt)
+                    if (std::abs(gridPos.x - vert.position.x) > searchRadius) continue;
+                    if (std::abs(gridPos.y - vert.position.y) > searchRadius) continue;
+                    if (std::abs(gridPos.z - vert.position.z) > searchRadius) continue;
 
-                    if(distanceSq <= searchRadiusSq) {
-                        
+                    // Precise Distance Check
+                    double d2 = (gridPos - vert.position).lengthSq();
+
+                    if(d2 <= searchRadiusSq) {
                         size_t idx = (size_t)z * (dimX * dimY) + (size_t)y * dimX + (size_t)x;
-
-                        if (distanceSq < grid[idx].minDistSq) {
-                            grid[idx].closestVertexIndex = i;
-                            grid[idx].minDistSq = distanceSq;
-                        }
+                        
+                        // INSERT into fixed-size priority queue
+                        grid[idx].insert(i, (float)d2);
                     }
                 }
             }
         }
     }
 
-    // --- PHASE 2: CLASSIFY ---
+    // --- PHASE 2: WEIGHTED VOTING ---
+    // Iterate over grid cells and classify them based on their collected candidates
     for(int z = 0; z < dimZ; z++) {
         for(int y = 0; y < dimY; y++) {
             for(int x = 0; x < dimX; x++) {
                 
-                size_t i = (size_t)z * (dimX * dimY) + (size_t)y * dimX + (size_t)x;
+                size_t idx = (size_t)z * (dimX * dimY) + (size_t)y * dimX + (size_t)x;
+                CellVotes& cell = grid[idx];
 
-                if(grid[i].closestVertexIndex != -1){
-                    
+                // Only process cells that found at least one surface vertex
+                if(cell.count > 0){
                     Vec3 test_point;
                     test_point.x = minBound.x + (x * spacing);
                     test_point.y = minBound.y + (y * spacing);
                     test_point.z = minBound.z + (z * spacing);
 
-                    const Vertex& closestVert = surfaceVertices[grid[i].closestVertexIndex];
-                    Vec3 dir = test_point - closestVert.position;
+                    double scoreInside = 0.0;
+                    double scoreOutside = 0.0;
                     
-                    // Dot Product check
-                    float dotproduct = closestVert.normal.dot(dir);
+                    // Iterate through top 3 (or fewer) candidates
+                    for(int j = 0; j < cell.count; j++) {
+                        const Vertex& v = surfaceVertices[cell.indices[j]];
+                        Vec3 dir = test_point - v.position;
+                        
+                        // WEIGHT CALCULATION: Inverse Distance Weighting
+                        
+                        // 1. Calculate Weight (1 / distance)
+                        // Add epsilon to avoid divide-by-zero
+                        float weight = 1.0f / (cell.distSq[j]  + 1e-6f);
 
-                    if (dotproduct < 0) {
+                        // 2. Dot Product Check
+                        if (v.normal.dot(dir) < 0) {
+                            scoreInside += weight;
+                        } else {
+                            scoreOutside += weight;
+                        }
+                    }
+
+                    // DECISION: Whichever score is higher wins
+                    if (scoreInside > scoreOutside) {
                         outInside.push_back(test_point);
                     } else {
                         outOutside.push_back(test_point);

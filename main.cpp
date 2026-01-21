@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
     int nz = (int)((end_z - start_z) / grid_spacing + 1e-5) + 1;
 
 
-    long total_reps = (long)nx * ny * nz;
+    long total_reps = (long)((nx+10) * (ny+10) * (nz+10));
 
     std::cout << "-> Processing Vertices" << std::endl;
 
