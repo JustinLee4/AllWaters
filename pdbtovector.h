@@ -10,6 +10,7 @@
 #include <iterator>
 #include <iomanip>
 #include <tuple>
+#include <cmath>
 
 #include "atom.h"
 

@@ -60,6 +60,16 @@ void SeparateGridPoints(
     std::vector<Vec3>& outOutside  // Output Vector 2
 );
 
+void FillInternalVoid(
+    const std::vector<Vec3>& shellPoints,
+    const std::vector<Vec3>& initialInsidePoints,
+    Vec3 minBound,
+    Vec3 maxBound,
+    float spacing,
+    std::vector<Vec3>& allPoints,
+    std::vector<std::vector<Vec3>>& layers
+);
+
 void WriteWaterPDB(const std::vector<Vec3>& waterPositions, const std::string& filename);
 
 

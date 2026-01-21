@@ -93,20 +93,26 @@ int main(int argc, char* argv[]){
     Vec3 minB = {(float)start_x - 5, (float)start_y - 5, (float)start_z - 5};
     Vec3 maxB = {(float)end_x + 5, (float)end_y + 5, (float)end_z + 5};
     
-    SeparateGridPoints(mySurface, minB, maxB, 0.25f, 2.0f, insidePoints, outsidePoints);
+    SeparateGridPoints(mySurface, minB, maxB, 0.25f, 2.5f, insidePoints, outsidePoints);
 
     WriteWaterPDB(insidePoints, output_file + "_in.pdb");
     WriteWaterPDB(outsidePoints, output_file + "_out.pdb");
 
-    std::cout << insidePoints.size() << "  " << outsidePoints.size() << std::endl;
-    /*
+
     std::cout << "-> Filling Void" << std::endl;
 
-    
-    std::cout  << "-> total gridpoints = " << std::scientific << std::setprecision(3) << (double)total_reps << std::endl;
-    std::cout << std::scientific << std::setprecision(3) << "-- removed " << (double)total_reps - (double)finalVolume.size() << " --" << std::endl;
-    std::cout << std::scientific << std::setprecision(3) << "-> Dowsing " << (double)finalVolume.size() << std::endl;
+    std::vector<Vec3> allpoints;
+    std::vector<std::vector<Vec3>> layers;
 
+    FillInternalVoid(outsidePoints, insidePoints, minB, maxB, .25, allpoints, layers);
+
+    std::cout  << "-> total gridpoints = " << std::scientific << std::setprecision(3) << (double)total_reps << std::endl;
+    std::cout << std::scientific << std::setprecision(3) << "-- removed " << (double)total_reps - (double)allpoints.size() << " (" << std::fixed << std::setprecision(1) << ((double)total_reps - (double)allpoints.size()) / total_reps * 100 <<"%) --" << std::endl;
+    std::cout << std::scientific << std::setprecision(3) << "-> Dowsing " << (double)allpoints.size() << std::endl;
+    
+    WriteWaterPDB(allpoints, output_file + "_all-internals.pdb");
+
+    /*
 
     std::vector<Atom> watervector = {};
     int dbug = 0;
@@ -127,10 +133,22 @@ int main(int argc, char* argv[]){
     //         }
     //     }
     // }
-    for (int i = 0; i < finalVolume.size(); i++){
-        std::cout << "\r** Iteration: " << dbug+1 << " of " << finalVolume.size() << " **" << std::flush;
+    */
+    std::vector<Atom> watervector = {};
+    int dbug = 0;
+    std::cout << "\033[?25l";
 
-        std::array<double, 3> temp_array = {finalVolume[i].position.x, finalVolume[i].position.y ,finalVolume[i].position.z};
+    for (int i = 0; i < allpoints.size(); i++){
+
+        double percent = 0.0;
+        if (!allpoints.empty()) {
+            percent = ((double)(dbug + 1) / allpoints.size()) * 100.0;
+        }
+        std::cout << "\r** Iteration: " << dbug+1 << " of " << allpoints.size() << " **\033[K\n"
+        << "   Progress:  " << std::fixed << std::setprecision(1) << percent << "%\033[K" << std::flush;
+        std::cout << "\033[1A";
+
+        std::array<double, 3> temp_array = {allpoints[i].x, allpoints[i].y ,allpoints[i].z};
         if(getOverlap_cluster(map, atomvector, temp_array, hash_spacing, water_diameter, cutoff_distance)){
             Atom newatom("HOH", "O", temp_array);
             watervector.push_back(newatom);
@@ -138,20 +156,30 @@ int main(int argc, char* argv[]){
         dbug += 1;
 
     }
+    std::cout << "\n\n\033[?25h";
 
     std::cout << "\n** There are " << watervector.size() << " waters **" <<std::endl;
 
 
     std::cout << "-> Entering vectortopdb" << std::endl;
     
-    vectortopdb(watervector, output_file);
+    vectortopdb(watervector, output_file + "_final.pdb");
 
     std::cout << "-> Success" << std::endl;
     
-    */
     auto end_time = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = end_time - start_time;
-    std::cout << "Time: " << elapsed.count() << " s" << std::endl;
+
+    long long total_seconds = static_cast<long long>(elapsed.count());
+    long long hours = total_seconds / 3600;
+    long long minutes = (total_seconds % 3600) / 60;
+    long long seconds = total_seconds % 60;
+
+    std::cout << "Time: " 
+          << std::setfill('0') << std::setw(2) << hours << ":"
+          << std::setfill('0') << std::setw(2) << minutes << ":"
+          << std::setfill('0') << std::setw(2) << seconds 
+          << std::endl;
 
     return 1;
 }

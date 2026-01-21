@@ -32,7 +32,7 @@ std::vector<Vertex> vert_to_vector(std::string vert_file) {
 int vectoIndex(Vec3 vector, int dimX, int dimY, int dimZ, Vec3 minBound, double spacing) {
 
     double grid_x = (vector.x - minBound.x) * (1/spacing);
-    double grid_y = (vector.y - minBound.x) * (1/spacing);
+    double grid_y = (vector.y - minBound.y) * (1/spacing);
     double grid_z = (vector.z - minBound.z) * (1/spacing);
 
     int idx = grid_z * (dimX * dimY) + grid_y * dimX + grid_x;
@@ -140,120 +140,111 @@ void SeparateGridPoints(
     }
 }
 
-void GenerateShell_Pull(
-    const std::vector<Vertex>& surfaceVertices,
+void FillInternalVoid(
+    const std::vector<Vec3>& shellPoints,
+    const std::vector<Vec3>& initialInsidePoints,
     Vec3 minBound,
     Vec3 maxBound,
-    float spacing,      // Fine grid spacing (e.g., 0.25)
-    float searchRadius, // Max distance to search (e.g., 1.5)
-    std::vector<Vec3>& outInside, 
-    std::vector<Vec3>& outOutside
+    float spacing,
+    std::vector<Vec3>& allPoints,
+    std::vector<std::vector<Vec3>>& layers
 ) {
-    // ---------------------------------------------------------
-    // PHASE 1: Build Acceleration Grid (Spatial Hashing)
-    // ---------------------------------------------------------
-    
-    // The bin size should effectively match the search radius.
-    // This guarantees we only check 3x3x3 bins.
-    float binSize = searchRadius; 
+    // Clear outputs to ensure fresh start
+    allPoints.clear();
+    layers.clear();
 
-    int binDimX = static_cast<int>(std::ceil((maxBound.x - minBound.x) / binSize)) + 1;
-    int binDimY = static_cast<int>(std::ceil((maxBound.y - minBound.y) / binSize)) + 1;
-    int binDimZ = static_cast<int>(std::ceil((maxBound.z - minBound.z) / binSize)) + 1;
+    // 1. Setup Grid Dimensions
+    // Added +1 buffer to ensure coverage
+    int dimX = static_cast<int>(std::ceil((maxBound.x - minBound.x) / spacing)) + 1;
+    int dimY = static_cast<int>(std::ceil((maxBound.y - minBound.y) / spacing)) + 1;
+    int dimZ = static_cast<int>(std::ceil((maxBound.z - minBound.z) / spacing)) + 1;
+    size_t totalCells = (size_t)dimX * dimY * dimZ;
 
-    // A flat vector of vectors. 
-    // storage[idx] contains a list of vertex indices that live in that bin.
-    std::vector<std::vector<int>> bins(binDimX * binDimY * binDimZ);
+    // 2. The "Marked" Map (visited/wall tracker)
+    std::vector<bool> marked(totalCells, false);
 
-    for (int i = 0; i < surfaceVertices.size(); i++) {
-        const Vec3& p = surfaceVertices[i].position;
-        
-        // Map vertex to Bin Coordinate
-        int bx = static_cast<int>((p.x - minBound.x) / binSize);
-        int by = static_cast<int>((p.y - minBound.y) / binSize);
-        int bz = static_cast<int>((p.z - minBound.z) / binSize);
-
-        // Bounds safety check
-        if (bx >= 0 && bx < binDimX && by >= 0 && by < binDimY && bz >= 0 && bz < binDimZ) {
-            size_t binIdx = (size_t)bz * (binDimX * binDimY) + (size_t)by * binDimX + bx;
-            bins[binIdx].push_back(i);
+    // 3. Mark the Shells (The Walls)
+    for (const auto& p : shellPoints) {
+        int idx = vectoIndex(p, dimX, dimY, dimZ, minBound, spacing);
+        if (idx != -1) {
+            marked[idx] = true; 
         }
     }
 
-    // ---------------------------------------------------------
-    // PHASE 2: The "Pull" Loop (Iterate Voxels)
-    // ---------------------------------------------------------
+    // 4. Initialize Queue with Seeds
+    std::vector<int> currentLayerIndices;
+    std::vector<Vec3> layer0;
+    
+    for (const auto& p : initialInsidePoints) {
+        int idx = vectoIndex(p, dimX, dimY, dimZ, minBound, spacing);
+        
+        // Only process if valid and NOT already marked (shell or duplicate)
+        if (idx != -1 && !marked[idx]) {
+            marked[idx] = true; 
+            currentLayerIndices.push_back(idx);
+            
+            // Reconstruct point to ensure grid alignment consistency
+            Vec3 alignedP = indextoVec3(idx, dimX, dimY, dimZ, minBound, spacing);
+            
+            allPoints.push_back(alignedP);
+            layer0.push_back(alignedP);
+        }
+    }
+    
+    if (!layer0.empty()) {
+        layers.push_back(layer0);
+    }
 
-    // Dimensions of the FINE grid (your output resolution)
-    int gridDimX = static_cast<int>(std::ceil((maxBound.x - minBound.x) / spacing)) + 1;
-    int gridDimY = static_cast<int>(std::ceil((maxBound.y - minBound.y) / spacing)) + 1;
-    int gridDimZ = static_cast<int>(std::ceil((maxBound.z - minBound.z) / spacing)) + 1;
-    float searchRadiusSq = searchRadius * searchRadius;
+    // 5. BFS Loop (Flood Fill)
+    // Neighbors: +X, -X, +Y, -Y, +Z, -Z
+    const int dx[6] = {1, -1, 0, 0, 0, 0};
+    const int dy[6] = {0, 0, 1, -1, 0, 0};
+    const int dz[6] = {0, 0, 0, 0, 1, -1};
 
-    // Iterate over every single target voxel
-    for (int z = 0; z < gridDimZ; z++) {
-        for (int y = 0; y < gridDimY; y++) {
-            for (int x = 0; x < gridDimX; x++) {
-                
-                // 1. Calculate World Position of this voxel
-                Vec3 voxelPos;
-                voxelPos.x = minBound.x + (x * spacing);
-                voxelPos.y = minBound.y + (y * spacing);
-                voxelPos.z = minBound.z + (z * spacing);
+    while (!currentLayerIndices.empty()) {
+        std::vector<int> nextLayerIndices;
+        std::vector<Vec3> nextLayerVecs;
 
-                // 2. Which Bin is this voxel inside?
-                int bx = static_cast<int>((voxelPos.x - minBound.x) / binSize);
-                int by = static_cast<int>((voxelPos.y - minBound.y) / binSize);
-                int bz = static_cast<int>((voxelPos.z - minBound.z) / binSize);
+        for (int currentIdx : currentLayerIndices) {
+            
+            // Manual index unpacking for neighbor calculation
+            int slice = dimX * dimY;
+            int cz = currentIdx / slice;
+            int rem = currentIdx % slice;
+            int cy = rem / dimX;
+            int cx = rem % dimX;
 
-                int closestVertIdx = -1;
-                float minD = std::numeric_limits<float>::max();
+            for (int i = 0; i < 6; i++) {
+                int nx = cx + dx[i];
+                int ny = cy + dy[i];
+                int nz = cz + dz[i];
 
-                // 3. Search Neighboring Bins (3x3x3 Neighborhood)
-                // Since BinSize == SearchRadius, the closest point MUST be in this bin 
-                // or one of the 26 immediate neighbors.
-                for (int nz = bz - 1; nz <= bz + 1; nz++) {
-                    for (int ny = by - 1; ny <= by + 1; ny++) {
-                        for (int nx = bx - 1; nx <= bx + 1; nx++) {
-                            
-                            if (nx < 0 || nx >= binDimX || ny < 0 || ny >= binDimY || nz < 0 || nz >= binDimZ)
-                                continue;
-
-                            size_t neighborBinIdx = (size_t)nz * (binDimX * binDimY) + (size_t)ny * binDimX + nx;
-
-                            // Check all vertices in this bin
-                            for (int vIdx : bins[neighborBinIdx]) {
-                                const Vertex& v = surfaceVertices[vIdx];
-                                float d2 = (voxelPos - v.position).lengthSq();
-
-                                if (d2 < minD) {
-                                    minD = d2;
-                                    closestVertIdx = vIdx;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // 4. Result Processing
-                // If we found a valid vertex within range, classify the point
-                if (closestVertIdx != -1 && minD <= searchRadiusSq) {
-                    const Vertex& closest = surfaceVertices[closestVertIdx];
-                    Vec3 dir = voxelPos - closest.position;
+                // Bounds Check
+                if (nx >= 0 && nx < dimX && ny >= 0 && ny < dimY && nz >= 0 && nz < dimZ) {
                     
-                    // Simple dot product check
-                    // Note: For perfect shells, you might need a more robust sign check,
-                    // but this matches your current logic.
-                    if (closest.normal.x * dir.x + closest.normal.y * dir.y + closest.normal.z * dir.z < 0) {
-                        outInside.push_back(voxelPos);
-                    } else {
-                        outOutside.push_back(voxelPos);
+                    int nIdx = nz * slice + ny * dimX + nx;
+
+                    if (!marked[nIdx]) {
+                        marked[nIdx] = true; // Mark visited immediately
+                        nextLayerIndices.push_back(nIdx);
+                        
+                        Vec3 nPos = indextoVec3(nIdx, dimX, dimY, dimZ, minBound, spacing);
+                        
+                        nextLayerVecs.push_back(nPos);
+                        allPoints.push_back(nPos);
                     }
                 }
             }
         }
+
+        if (!nextLayerVecs.empty()) {
+            layers.push_back(nextLayerVecs);
+        }
+
+        currentLayerIndices = nextLayerIndices;
     }
 }
+
 
 void WriteWaterPDB(const std::vector<Vec3>& waterPositions, const std::string& filename) {
     FILE* file = fopen(filename.c_str(), "w");
@@ -305,5 +296,5 @@ void WriteWaterPDB(const std::vector<Vec3>& waterPositions, const std::string& f
     fprintf(file, "END\n");
     fclose(file);
     
-    printf("Successfully wrote %zu waters to %s\n", waterPositions.size(), filename.c_str());
+    printf("Successfully wrote %.3e waters to %s\n", (double)waterPositions.size(), filename.c_str());
 }
