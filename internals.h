@@ -9,6 +9,7 @@
 #include <sstream>
 #include <queue>
 #include <unordered_set>
+#include <iterator>
 #include <algorithm>
 #include <cstdio> // For FILE, fprintf
 
