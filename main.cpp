@@ -117,7 +117,6 @@ int main(int argc, char* argv[]){
     }
 
     /*
-
     std::vector<Atom> watervector = {};
     int dbug = 0;
 
