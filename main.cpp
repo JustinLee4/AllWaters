@@ -93,7 +93,7 @@ int main(int argc, char* argv[]){
     Vec3 minB = {(float)start_x - 5, (float)start_y - 5, (float)start_z - 5};
     Vec3 maxB = {(float)end_x + 5, (float)end_y + 5, (float)end_z + 5};
     
-    SeparateGridPoints(mySurface, minB, maxB, 0.25f, 2.5f, insidePoints, outsidePoints);
+    SeparateGridPoints(mySurface, minB, maxB, (float)grid_spacing, 2.5f, insidePoints, outsidePoints);
 
     WriteWaterPDB(insidePoints, output_file + "_in.pdb");
     WriteWaterPDB(outsidePoints, output_file + "_out.pdb");
@@ -111,6 +111,10 @@ int main(int argc, char* argv[]){
     std::cout << std::scientific << std::setprecision(3) << "-> Dowsing " << (double)allpoints.size() << std::endl;
     
     WriteWaterPDB(allpoints, output_file + "_all-internals.pdb");
+
+    for( int i = 0; i < layers.size(); i++) {
+        WriteWaterPDB(layers[i], "/layers" + output_file + "_layer_" + std::to_string(i) + ".pdb");
+    }
 
     /*
 
