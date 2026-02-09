@@ -16,10 +16,10 @@ float shellradius = 2.5;
 std::string input_file = "pdbfiles/L-sub_met.pdb";
 // std::string input_file = "pdbfiles/test_sphere.pdb";
 
-std::string vert_file = "vert_files/L-sub_dens3_rolling-75.vert";
+std::string vert_file = "vert_files/L-sub_dens2_rolling2.vert";
 // std::string vert_file = "vert_files/test_sphere.vert";
 
-std::string output_file = "results/L-sub_dens3_rolling-75";
+std::string output_file = "results/L-sub_dens2_rolling2_test";
 // std::string output_file = "results/test_sphere";
 
 

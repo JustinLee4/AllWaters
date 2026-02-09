@@ -1,24 +1,25 @@
 #ifndef PDB_TO_VECTOR
 #define PDB_TO_VECTOR
 
-#include <iostream>
-#include <fstream>
-#include <string>
-#include <filesystem>
-#include <sstream>
-#include <vector>
-#include <iterator>
-#include <iomanip>
-#include <tuple>
+#include <algorithm>
 #include <cmath>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <iterator>
+#include <sstream>
+#include <string>
+#include <tuple>
+#include <vector>
 
 #include "atom.h"
 
 
-std::array<double, 3> get_coords(std::string input);
+std::array<double, 3> get_coords(const std::string& input);
 
-std::tuple<std::string, std::string> get_data(std::string input);
 
+std::tuple<std::string, std::string> get_data(const std::string& input);
 
 
 //turn pdbfile to a vector of atoms

@@ -1,46 +1,113 @@
 #include "pdbtovector.h"
-
-//get coords for Atom class
-std::array<double, 3> get_coords(std::string input) {
-    std::array<double,3> output;
-    std::string s;
-    std::stringstream ss(input);
+//this is bugged when not separated by whitespace
+// //get coords for Atom class
+// std::array<double, 3> get_coords(std::string input) {
+//     std::array<double,3> output;
+//     std::string s;
+//     std::stringstream ss(input);
    
-    // 1. Create the "start" iterator, initialized with the stringstream
-    std::istream_iterator<std::string> start(ss);
+//     // 1. Create the "start" iterator, initialized with the stringstream
+//     std::istream_iterator<std::string> start(ss);
     
-    // 2. Create the "end" (default) iterator
-    std::istream_iterator<std::string> end;
+//     // 2. Create the "end" (default) iterator
+//     std::istream_iterator<std::string> end;
     
-    // 3. Create the vector. This is now completely unambiguous.
-    std::vector<std::string> tokens(start, end);
-    // for(int i = 0; i < tokens.size(); i++){
-    //     std::cout << tokens[i] << ", i= " << i << std::endl;
-    // }
-    for(int i = 0; i < 3; i++){
-        output[i] = std::stod(tokens[i + 6]);
+//     // 3. Create the vector. This is now completely unambiguous.
+//     std::vector<std::string> tokens(start, end);
+//     // for(int i = 0; i < tokens.size(); i++){
+//     //     std::cout << tokens[i] << ", i= " << i << std::endl;
+//     // }
+//     for(int i = 0; i < 3; i++){
+//         output[i] = std::stod(tokens[i + 6]);
+//     }
+//     return output;
+// }
+
+std::array<double, 3> get_coords(const std::string& input) {
+    // Initialize with 0.0 or a sentinel value (e.g., infinity)
+    std::array<double, 3> output = {0.0, 0.0, 0.0};
+
+    // 2. Extract Substrings based on PDB Standard (0-based indexing)
+    // X: Columns 31-38 -> Index 30, Length 8
+    // Y: Columns 39-46 -> Index 38, Length 8
+    // Z: Columns 47-54 -> Index 46, Length 8
+    try {
+        std::string x_str = input.substr(30, 8);
+        std::string y_str = input.substr(38, 8);
+        std::string z_str = input.substr(46, 8);
+
+        // 3. Convert to Double
+        // std::stod automatically handles leading/trailing whitespace in the substring
+        output[0] = std::stod(x_str);
+        output[1] = std::stod(y_str);
+        output[2] = std::stod(z_str);
+    } 
+    catch (...) {
+        // Handles cases where columns are empty, contain "*******",
+        // or contain non-numeric data.
+        return {0.0, 0.0, 0.0};
     }
+
     return output;
 }
 
-std::tuple<std::string, std::string> get_data(std::string input) {
-    std::string resname;
-    std::string atomname;
-    std::tuple<std::string, std::string> output;
+// std::tuple<std::string, std::string> get_data(std::string input) {
+//     std::string resname;
+//     std::string atomname;
+//     std::tuple<std::string, std::string> output;
 
-    std::stringstream ss(input);
+//     std::stringstream ss(input);
 
-    std::istream_iterator<std::string> start(ss);
-    std::istream_iterator<std::string> end;
+//     std::istream_iterator<std::string> start(ss);
+//     std::istream_iterator<std::string> end;
 
-    std::vector<std::string> tokens(start, end);
+//     std::vector<std::string> tokens(start, end);
 
-    std::get<0>(output) = tokens[3];
-    std::get<1>(output) = tokens[2];
+//     std::get<0>(output) = tokens[3];
+//     std::get<1>(output) = tokens[2];
 
-    return output;
+//     return output;
 
+// }
 
+// Helper function to trim whitespace from the result
+std::string trim(const std::string& str) {
+    auto first = str.find_first_not_of(' ');
+    if (std::string::npos == first) {
+        return str;
+    }
+    auto last = str.find_last_not_of(' ');
+    return str.substr(first, (last - first + 1));
+}
+
+std::tuple<std::string, std::string> get_data(const std::string& input) {
+    // Default return values (Residue Name, Atom Name)
+    std::string resName = "UNK";
+    std::string atomName = " X  ";
+    
+    // PDB Fixed Column Widths (0-indexed):
+    // Atom Name:    Columns 13-16 -> Index 12, Length 4
+    // Residue Name: Columns 18-20 -> Index 17, Length 3
+    
+    try {
+        if (input.length() > 20) {
+            // Extract raw substrings
+            std::string atom_raw = input.substr(12, 4);
+            std::string res_raw = input.substr(17, 3);
+            
+            // Clean up whitespace (turn " O  " into "O")
+            atomName = trim(atom_raw);
+            resName = trim(res_raw);
+        }
+    } 
+    catch (...) {
+        // Fallback for empty or malformed lines
+        // Returns defaults set above
+    }
+
+    // Return format matching your original tuple order: 
+    // <0> Residue Name, <1> Atom Name
+    return std::make_tuple(resName, atomName);
 }
 
 
@@ -135,27 +202,44 @@ void vectortopdb(const std::vector<Atom> &atomvector, std::string output_filenam
     for(int i = 0; i < atomvector.size(); i++) {
         std::array<double, 3> pos = atomvector[i].getCoords();
         int z = i + 1;
-        if( z > 99999) {
-            z = 99999;
+        if( z > 9999) {
+            z = 9999;
         }
 
-        out_file << "HETATM"                                   // [ 1- 6] Record
-                << std::setw(5) << std::right << z         // [ 7-11] Serial
-                << " "                                        // [12]    Blank
-                << " "                                        // [13]    Space (standard for Element O)
-                << std::setw(3) << std::left << atomvector[i].get_atomname() // [14-16] Name "O  " (padded to 3)
-                << std::setw(3) << std::right << atomvector[i].get_resname() // [18-20] ResName
-                << "  "                                       // [21-22] Chain ID (A) + Blank
-                << std::setw(4) << std::right << z       // [23-26] ResSeq
-                << "    "                                     // [27-30] Code + Blanks
-                << std::setw(8) << std::right << pos[0]       // [31-38] X
-                << std::setw(8) << std::right << pos[1]       // [39-46] Y
-                << std::setw(8) << std::right << pos[2]       // [47-54] Z
-                << std::setw(6) << std::right << "1.00"       // [55-60] Occupancy
-                << std::setw(6) << std::right << "0.00"       // [61-66] Temp Factor
-                << "           "                              // [67-77] Spacing
-                << "O"                                        // [78]    Element Symbol
-                << "\n";
+        // out_file << "HETATM"                                   // [ 1- 6] Record
+        //         << std::setw(5) << std::right << z         // [ 7-11] Serial
+        //         << " "                                        // [12]    Blank
+        //         << " "                                        // [13]    Space (standard for Element O)
+        //         << std::setw(3) << std::left << atomvector[i].get_atomname() // [14-16] Name "O  " (padded to 3)
+        //         << std::setw(3) << std::right << atomvector[i].get_resname() // [18-20] ResName
+        //         << "  "                                       // [21-22] Chain ID (A) + Blank
+        //         << std::setw(4) << std::right << z       // [23-26] ResSeq
+        //         << "    "                                     // [27-30] Code + Blanks
+        //         << std::setw(8) << std::right << pos[0]       // [31-38] X
+        //         << std::setw(8) << std::right << pos[1]       // [39-46] Y
+        //         << std::setw(8) << std::right << pos[2]       // [47-54] Z
+        //         << std::setw(6) << std::right << "1.00"       // [55-60] Occupancy
+        //         << std::setw(6) << std::right << "0.00"       // [61-66] Temp Factor
+        //         << "           "                              // [67-77] Spacing
+        //         << "O"                                        // [78]    Element Symbol
+        //         << "\n";
+        out_file << "HETATM"
+         << std::setw(5) << std::right << z        // Col 7-11
+         << " "                                         // Col 12
+         << " O  "                                      // Col 13-16 (Atom Name)
+         << " "                                         // Col 17
+         << "HOH"                                       // Col 18-20 (ResName)
+         << " "                                         // Col 21
+         << "A"                                         // Col 22 (Chain)
+         << std::setw(4) << std::right << z        // Col 23-26 (ResSeq)
+         << "    "                                      // Col 27-30
+         << std::setw(8) << std::fixed << std::right << pos[0] // X
+         << std::setw(8) << std::fixed << std::right << pos[1] // Y
+         << std::setw(8) << std::fixed << std::right << pos[2] // Z
+         << std::setw(6) << "1.00"                      // Occ
+         << std::setw(6) << "0.00"                      // Temp
+         << "          "                                // Spacing
+         << " O" << "\n";                               // Element
     }   
     out_file.close();
 }
