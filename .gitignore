@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# PDB Files
+*_all-internals.pdb
+*_in.pdb
+*_out.pdb
+
 # User-specific files
 *.rsuser
 *.suo
@@ -91,7 +96,6 @@ StyleCopReport.xml
 *.idb
 *.iobj
 *.pch
-*.pdb
 *.ipdb
 *.pgc
 *.pgd

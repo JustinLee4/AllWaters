@@ -11,14 +11,15 @@ double hash_spacing = 3;
 double grid_spacing = .25;
 double water_diameter = 2.5;
 double cutoff_distance = 5;
+float shellradius = 2.5;
 
 std::string input_file = "pdbfiles/L-sub_met.pdb";
 // std::string input_file = "pdbfiles/test_sphere.pdb";
 
-std::string vert_file = "vert_files/L-sub.vert";
+std::string vert_file = "vert_files/L-sub_dens3_rolling-75.vert";
 // std::string vert_file = "vert_files/test_sphere.vert";
 
-std::string output_file = "results/L-sub";
+std::string output_file = "results/L-sub_dens3_rolling-75";
 // std::string output_file = "results/test_sphere";
 
 
@@ -93,7 +94,7 @@ int main(int argc, char* argv[]){
     Vec3 minB = {(float)start_x - 5, (float)start_y - 5, (float)start_z - 5};
     Vec3 maxB = {(float)end_x + 5, (float)end_y + 5, (float)end_z + 5};
     
-    SeparateGridPoints(mySurface, minB, maxB, (float)grid_spacing, 2.5f, insidePoints, outsidePoints);
+    SeparateGridPoints(mySurface, minB, maxB, (float)grid_spacing, shellradius, insidePoints, outsidePoints);
 
     WriteWaterPDB(insidePoints, output_file + "_in.pdb");
     WriteWaterPDB(outsidePoints, output_file + "_out.pdb");
@@ -112,9 +113,11 @@ int main(int argc, char* argv[]){
     
     WriteWaterPDB(allpoints, output_file + "_all-internals.pdb");
 
-    for( int i = 0; i < layers.size(); i++) {
-        WriteWaterPDB(layers[i], "/layers" + output_file + "_layer_" + std::to_string(i) + ".pdb");
-    }
+    //printing layers
+
+    // for( int i = 0; i < layers.size(); i++) {
+    //     WriteWaterPDB(layers[i], "/layers" + output_file + "_layer_" + std::to_string(i) + ".pdb");
+    // }
 
     /*
     std::vector<Atom> watervector = {};
