@@ -27,6 +27,11 @@ void Atom::set_radius(double new_radius) {
     radius = new_radius;
 }
 
+double Atom::get_radius() {
+    return radius;
+}
+
+
 std::string Atom::get_resname()const{
     return resname;
 }

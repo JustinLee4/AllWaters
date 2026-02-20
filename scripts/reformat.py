@@ -128,12 +128,12 @@ def process_files(input_files, output_path):
     
     with open(output_path, 'w') as out:
         # --- NEW BLOCK: WRITE REMARKS ---
-        out.write("REMARK 999 B-FACTOR LEGEND (SOURCE FILES):\n")
+        out.write("REMARK    B-FACTOR LEGEND (SOURCE FILES):\n")
         for i, fpath in enumerate(input_files):
             filename = os.path.basename(fpath)
             # Writes: REMARK 999 B-FACTOR 0.00 = file1.pdb
-            out.write(f"REMARK 999 B-FACTOR {float(i):<4.2f} = {filename}\n")
-        out.write("REMARK 999 --------------------------------\n")
+            out.write(f"REMARK    B-FACTOR {float(i):<4.2f} = {filename}\n")
+        out.write("REMARK     --------------------------------\n")
         # --------------------------------
         
         for i, atom in enumerate(all_atoms):
@@ -145,15 +145,17 @@ def process_files(input_files, output_path):
 def main():
     parser = argparse.ArgumentParser(description="Combine PDBs (Water Oxygens Only).")
     parser.add_argument('inputs', nargs='+', help='List of input PDB files')
-    parser.add_argument('-o', '--outdir', required=True, help='Output directory')
-    parser.add_argument('-n', '--name', default='reformat_waters.pdb', help='Output filename')
+    parser.add_argument('-o', '--output', required=True, help='Full path for the output PDB file')
     
     args = parser.parse_args()
 
-    if not os.path.exists(args.outdir):
-        os.makedirs(args.outdir)
+    output_file = args.output
+    output_dir = os.path.dirname(output_file)
 
-    output_file = os.path.join(args.outdir, args.name)
+    if output_dir and not os.path.exists(output_dir):
+        print(f"Creating directory: {output_dir}")
+        os.makedirs(output_dir)
+
     process_files(args.inputs, output_file)
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 #include "pdbtovector.h"
 
-#include "common.h"
+
 
 //this is bugged when not separated by whitespace
 // //get coords for Atom class
@@ -219,6 +219,12 @@ std::tuple<std::vector<Atom>, double, double, double, double, double, double> pd
             
             std::array<double, 3> this_array = get_coords(line_string);
             std::tuple<std::string, std::string> this_data = get_data(line_string);
+
+            std::string resName = std::get<0>(this_data);
+            std::string atomName = std::get<1>(this_data);
+
+            AtomParams params = getParams(resName, atomName);
+            double radius = params.radius_aa;
             
             double b_factor = get_bfactor(line_string);
 
@@ -227,6 +233,7 @@ std::tuple<std::vector<Atom>, double, double, double, double, double, double> pd
                                   std::get<1>(this_data), // AtomName
                                   this_array,             // Coords
                                   b_factor);              // B-Factor
+            this_Atom.set_radius(radius);
             
             output.push_back(this_Atom);
 

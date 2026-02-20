@@ -66,6 +66,8 @@ void printSpatialGrid(const std::unordered_map<GridKey, std::vector<int>>& grid)
 bool getOverlap_cluster(const std::unordered_map<GridKey, std::vector<int>>& grid, std::vector<Atom>& Atomvector, std::array<double,3> target, double gridCellSize, double diameter, double cutoff_dist) {
 
     double cutoff_dist_sq = (cutoff_dist * cutoff_dist);
+    double targetRadius = diameter / 2.0; 
+
 
     // 1. Get the center coordinates of the target particle
     GridKey centerKey = getGridKey_pos(target, gridCellSize);
@@ -107,7 +109,6 @@ bool getOverlap_cluster(const std::unordered_map<GridKey, std::vector<int>>& gri
                         AtomParams params = getParams(Atomvector[neighborIndex].get_resname(), Atomvector[neighborIndex].get_atomname());
                         double atomradius =  params.radius_aa;
 
-                        double targetRadius = diameter / 2.0; 
                         double collisionThreshold = targetRadius + atomradius;
 
                         if(distance <= (collisionThreshold * collisionThreshold)) {

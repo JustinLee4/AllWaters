@@ -1,6 +1,10 @@
 #ifndef PDB_TO_VECTOR
 #define PDB_TO_VECTOR
 
+#include "atom.h"
+#include "AtomicRadii.h"
+#include "common.h"
+
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
@@ -12,8 +16,6 @@
 #include <string>
 #include <tuple>
 #include <vector>
-
-#include "atom.h"
 
 
 std::array<double, 3> get_coords(const std::string& input);

@@ -36,6 +36,8 @@ class Atom {
 
     void set_radius(double new_radius);
 
+    double get_radius();
+
     std::string get_resname() const;
 
     std::string get_atomname() const;
