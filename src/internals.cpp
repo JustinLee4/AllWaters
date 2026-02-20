@@ -142,6 +142,8 @@ void SeparateGridPoints(
         }
     }
 }
+
+//weighted voting
 // void SeparateGridPoints(
 //     const std::vector<Vertex>& surfaceVertices,
 //     Vec3 minBound,
