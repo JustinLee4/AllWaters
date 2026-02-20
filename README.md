@@ -16,6 +16,11 @@ The workflow is as such:
             this determines the grid spacing of generated water molecules.
         -cluster
             including this flag skips all generation and assumes that you provide a pdb file of only waters for clustering purposes - this will use the <-s> argument to calculate neighbors
+        -pymol
+            including this flag tells the program to create a pyMOL session file that visualizes the results.
+            this should also be found in results as a .pse file
+            IF HAVING PROBLEMS WITH THIS FLAG AND ON WINDOWS/MAC:
+                enter pymol.cpp and edit the pyMOL PATH (line 40/43) for your respective OS to match local pyMOL install
 5. Results should be found in results/
 
-compare_waters.py is included as a script to compare with other pdb files.
+scripts/compare_waters.py is included as a script to compare with other pdb files.

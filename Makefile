@@ -9,9 +9,10 @@ INC_DIR = include
 OBJ_DIR = build
 BIN_DIR = bin
 RES_DIR = results
+TEMP_DIR = temp
 
 # 3. Object files (Mapped to the build directory)
-MAIN_OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/atom.o $(OBJ_DIR)/Atom_Lookup.o $(OBJ_DIR)/AtomicRadii_Map.o $(OBJ_DIR)/cluster.o $(OBJ_DIR)/internals.o $(OBJ_DIR)/map.o $(OBJ_DIR)/pdbtovector.o
+MAIN_OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/atom.o $(OBJ_DIR)/Atom_Lookup.o $(OBJ_DIR)/AtomicRadii_Map.o $(OBJ_DIR)/cluster.o $(OBJ_DIR)/internals.o $(OBJ_DIR)/map.o $(OBJ_DIR)/pdbtovector.o $(OBJ_DIR)/pymol.o
 
 # 4. Phony Targets (Commands that are not actual files)
 .PHONY: all clean main debug print
@@ -30,7 +31,7 @@ print: CXXFLAGS = -O3 -DPRINT_MODE -std=c++17 -Iinclude
 print: clean all
 
 # 6. Build rules for the executables
-$(BIN_DIR)/allwaters: $(MAIN_OBJS) | $(BIN_DIR) $(RES_DIR)
+$(BIN_DIR)/allwaters: $(MAIN_OBJS) | $(BIN_DIR) $(RES_DIR) $(TEMP_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # 7. Generic rule to build .o files from src/%.cpp inside build/
@@ -47,6 +48,9 @@ $(BIN_DIR):
 $(RES_DIR):
 	mkdir -p $(RES_DIR)
 
+$(TEMP_DIR):
+	mkdir -p $(TEMP_DIR)
+
 # 9. Clean up everything (Deletes the build and bin folders entirely)
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(BIN_DIR) $(TEMP_DIR)

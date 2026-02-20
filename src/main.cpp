@@ -3,6 +3,7 @@
 #include "common.h"
 #include "internals.h"
 #include "pdbtovector.h"
+#include "pymol.h"
 #include "map.h"
 
 #include <cstdlib>
@@ -16,6 +17,7 @@ double grid_spacing = .25;
 double water_diameter = 2.5;
 double cutoff_distance = 5;
 float shellradius = 2.5;
+std::string structure_file = "";
 
 
 int main(int argc, char* argv[]){
@@ -28,6 +30,7 @@ int main(int argc, char* argv[]){
     std::string output_file = "";
     std::string r_value = "3.5";
     bool only_cluster = false;
+    bool pymol = false;
 
 
     for (int i = 1; i < argc; ++i) {
@@ -35,6 +38,7 @@ int main(int argc, char* argv[]){
 
         if ((arg == "-p" || arg == "--pdb") && i + 1 < argc) {
             input_file = argv[++i]; 
+            structure_file = input_file;
         } 
         else if ((arg == "-v" || arg == "--vert") && i + 1 < argc) {
             vert_file = argv[++i];
@@ -73,6 +77,9 @@ int main(int argc, char* argv[]){
         else if ((arg == "-cluster")) {
             only_cluster = true;
         }
+        else if ((arg == "-pymol")) {
+            pymol=true;
+        }
     
 
         else {
@@ -100,6 +107,9 @@ int main(int argc, char* argv[]){
         std::cout << "Internal/External Shell Radius (Initial/Flood Fill): " << shellradius << std::endl;
         std::cout << "Internal/External Shell Radius (Secondary/Categorize): " << r_value << std::endl;
     }
+    if(pymol) {
+        std::cout << "This run will write a .pse (pyMOL) file";
+    }
 
 
     std::string response;
@@ -115,6 +125,8 @@ int main(int argc, char* argv[]){
             std::cout << "Invalid input. Please enter 'y' or 'n'." << std::endl;
         }
     }
+
+    //---------- the next section does not apply if the -cluster tag is selected ----------
 
     if(!only_cluster) { 
     // ---------- reading PDB into vector ----------
@@ -288,6 +300,18 @@ int main(int argc, char* argv[]){
     std::cout << "-> Writing to " << output_file << ".pdb" << std::flush;
     writeClusteredPDB(clusters, output_file, remarks);
 
+
+    std::cout << "\n-> Launching pyMOL" << std::endl;
+
+    if(pymol && !structure_file.empty()) {
+        createPyMOLSession(output_file, output_file, structure_file);
+    } else if (pymol)
+    {
+        createPyMOLSession(output_file, output_file);
+    }
+    
+
+
     std::string internals_file = output_file + "_all_internal_gridpoints.pdb";
     std::string internals_categorized_file = output_file + "_internal.pdb";
     std::string surface_categorized_file = output_file + "_surface.pdb";
@@ -307,9 +331,7 @@ int main(int argc, char* argv[]){
     if(std::filesystem::exists(reformatted_file)) {
         std::filesystem::remove(reformatted_file);
     }
-
-
-    std::cout << "\n-> Success" << std::endl;
+    std::cout << "-> Success" << std::endl;
 
     //--------- timer ----------
     auto end_time = std::chrono::high_resolution_clock::now();
