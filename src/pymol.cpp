@@ -47,7 +47,7 @@ void createPyMOLSession(const std::string& pdb_file, const std::string& session_
             std::string pymol_path = "\"C:\\ProgramData\\pymol\\PyMOLWin.exe\"";            
             std::string cmd = pymol_path + "-cq -r " + script_name;        
         #elif __APPLE__
-            std::string cmd = "/Applications/PyMOL.app/Contents/MacOS/PyMOL -cq -r " + script_name + " &";
+            std::string cmd = "/Applications/PyMOL.app/Contents/MacOS/PyMOL -cq -r " + script_name;
         #else
             std::string cmd = "pymol -cq -r " + script_name + " &";
         #endif
