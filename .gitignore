@@ -6,6 +6,7 @@
 # Project files
 OLD/
 src/find_clusters.cpp
+temp/
 
 # PDB Files
 *_all-internals.pdb
