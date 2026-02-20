@@ -6,6 +6,7 @@
 #include "map.h"
 
 #include <cstdlib>
+#include <filesystem>
 #include <iostream>
 #include <iomanip>
 
@@ -286,6 +287,28 @@ int main(int argc, char* argv[]){
 
     std::cout << "-> Writing to " << output_file << ".pdb" << std::flush;
     writeClusteredPDB(clusters, output_file, remarks);
+
+    std::string internals_file = output_file + "_all_internal_gridpoints.pdb";
+    std::string internals_categorized_file = output_file + "_internal.pdb";
+    std::string surface_categorized_file = output_file + "_surface.pdb";
+    std::string reformatted_file = output_file + "_reformatted.pdb";
+
+
+
+    if(std::filesystem::exists(internals_file)) {
+        std::filesystem::remove(internals_file);
+    }
+    if(std::filesystem::exists(internals_categorized_file)) {
+        std::filesystem::remove(internals_categorized_file);
+    }
+    if(std::filesystem::exists(surface_categorized_file)) {
+        std::filesystem::remove(surface_categorized_file);
+    }
+    if(std::filesystem::exists(reformatted_file)) {
+        std::filesystem::remove(reformatted_file);
+    }
+
+
     std::cout << "\n-> Success" << std::endl;
 
     //--------- timer ----------

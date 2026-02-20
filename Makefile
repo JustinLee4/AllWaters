@@ -8,6 +8,7 @@ SRC_DIR = src
 INC_DIR = include
 OBJ_DIR = build
 BIN_DIR = bin
+RES_DIR = results
 
 # 3. Object files (Mapped to the build directory)
 MAIN_OBJS = $(OBJ_DIR)/main.o $(OBJ_DIR)/atom.o $(OBJ_DIR)/Atom_Lookup.o $(OBJ_DIR)/AtomicRadii_Map.o $(OBJ_DIR)/cluster.o $(OBJ_DIR)/internals.o $(OBJ_DIR)/map.o $(OBJ_DIR)/pdbtovector.o
@@ -29,7 +30,7 @@ print: CXXFLAGS = -O3 -DPRINT_MODE -std=c++17 -Iinclude
 print: clean all
 
 # 6. Build rules for the executables
-$(BIN_DIR)/allwaters: $(MAIN_OBJS) | $(BIN_DIR)
+$(BIN_DIR)/allwaters: $(MAIN_OBJS) | $(BIN_DIR) $(RES_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # 7. Generic rule to build .o files from src/%.cpp inside build/
@@ -42,6 +43,9 @@ $(OBJ_DIR):
 
 $(BIN_DIR):
 	mkdir -p $(BIN_DIR)
+
+$(RES_DIR):
+	mkdir -p $(RES_DIR)
 
 # 9. Clean up everything (Deletes the build and bin folders entirely)
 clean:
