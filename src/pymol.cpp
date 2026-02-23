@@ -29,6 +29,8 @@ void createPyMOLSession(const std::string& pdb_file, const std::string& session_
 
         pml << "set seq_view, 1, " << input_file_stem << "\n";
 
+        pml << "select only_external_waters, not (byres (not (b>.5))) and resn HOH";
+
 
         if(!structure_file.empty()){
             pml << "load " << structure_file << "\n";
@@ -45,7 +47,7 @@ void createPyMOLSession(const std::string& pdb_file, const std::string& session_
 
         #ifdef _WIN32
             std::string pymol_path = "\"C:\\ProgramData\\pymol\\PyMOLWin.exe\"";            
-            std::string cmd = pymol_path + "-cq -r " + script_name;        
+            std::string cmd = pymol_path + " -cq -r " + script_name;        
         #elif __APPLE__
             std::string cmd = "/Applications/PyMOL.app/Contents/MacOS/PyMOL -cq -r " + script_name;
         #else

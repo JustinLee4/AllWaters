@@ -16,7 +16,7 @@ double hash_spacing = 3;
 double grid_spacing = .25;
 double water_diameter = 2.5;
 double cutoff_distance = 5;
-float shellradius = 2.5;
+float shellradius = 3.5;
 std::string structure_file = "";
 
 
@@ -84,14 +84,14 @@ int main(int argc, char* argv[]){
 
         else {
             std::cerr << "Error: Unknown or incomplete argument '" << arg << "'" << std::endl;
-            std::cerr << "Usage: " << argv[0] << " -p <pdb> -v <vert> -o <out> [-r <value>] [-cluster]" << std::endl;
+            std::cerr << "Usage: " << argv[0] << " -p <pdb> -v <vert> -o <out> [-r <value>] [-cluster] [-pymol]" << std::endl;
             return 1;
         }
     }
 
     if ((input_file.empty() || vert_file.empty() || output_file.empty())) {
         std::cerr << "Error: Missing required arguments" << std::endl;
-        std::cerr << "Usage: " << argv[0] << " -p <pdb> -v <vert> -o <out> [-r <value>] [-cluster]" << std::endl;
+        std::cerr << "Usage: " << argv[0] << " -p <pdb> -v <vert> -o <out> [-r <value>] [-cluster] [-pymol]" << std::endl;
         return 1;
     }
 
