@@ -137,8 +137,9 @@ def process_files(input_files, output_path):
         # --------------------------------
         
         for i, atom in enumerate(all_atoms):
-            serial = i + 1
-            out.write(format_pdb_line(atom, serial, serial))
+            serial = ((i) % 99999) + 1
+            res_seq = ((i) % 9999) + 1
+            out.write(format_pdb_line(atom, serial, res_seq))
         out.write("END\n")
     print("Done.")
 

@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser(prog='generate_surface_vertices.py',
 parser.add_argument('-f', '--pdb_file')
 parser.add_argument('-o', '--output')
 parser.add_argument('-r', '--probe_radius')
+parser.add_argument('-d', '--density')
 
 
 def convert_pdb_to_xyzr(input_pdb: str):
@@ -34,7 +35,7 @@ def convert_pdb_to_xyzr(input_pdb: str):
     return output_name
 
 
-def run_msms(input_pdb: str, output: str, probe_radius=1.5):
+def run_msms(input_pdb: str, output: str, probe_radius=2, density=2):
     """
     wrapper function that runs msms to generate surface vertices
     ----------------------------------------------------------------------------
@@ -47,11 +48,17 @@ def run_msms(input_pdb: str, output: str, probe_radius=1.5):
     probe_radius: float
     probe radius for msms in angstroms
 
+    density: float
+    surface point density for msms
+
     ----------------------------------------------------------------------------
     """
     vertice_filename = convert_pdb_to_xyzr(args.pdb_file)
-    popen_args = ("./msms.x86_64Linux2.2.6.1", "-if", vertice_filename,
-                  "-of", output, "-probe_radius", probe_radius)
+    probe_radius = str(probe_radius)
+    density = str(density)
+    popen_args = ("./msms_Arm64_2.6.1", "-if", vertice_filename,
+                  "-of", output, "-probe_radius", probe_radius,
+                  "-density", density)
     popen = subprocess.Popen(popen_args, stdout = subprocess.PIPE)
     popen.wait()
     pass
@@ -62,8 +69,11 @@ if __name__== '__main__':
     print(args.pdb_file)
     print(args.output)
     if not args.probe_radius:
-        args.probe_radius = 1.5
+        args.probe_radius = 2
+    if not args.density:
+        args.density = 2
     print(args.probe_radius)
-    run_msms(args.pdb_file, args.output, args.probe_radius)
+    print(args.density)
+    run_msms(args.pdb_file, args.output, args.probe_radius, args.density)
 
     pass

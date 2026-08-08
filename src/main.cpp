@@ -245,7 +245,7 @@ int main(int argc, char* argv[]){
 
     std::cout << "-> Entering categorize_water" << std::endl;
 
-    std::string categorize_water_python = "python categorize_water/categorize_water.py -f " + output_file + "_all_internal_gridpoints.pdb" 
+    std::string categorize_water_python = "python3 categorize_water/categorize_water.py -f " + output_file + "_all_internal_gridpoints.pdb" 
                                                                         " -s " + vert_file + 
                                                                         " -o " + output_file +
                                                                         " -r " + r_value;
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]){
         return 1;
     }
 
-    std::string reformat_python = "python scripts/reformat.py -o "+ output_file + "_reformatted.pdb " + output_file + "_internal.pdb " + output_file + "_surface.pdb";
+    std::string reformat_python = "python3 scripts/reformat.py -o "+ output_file + "_reformatted.pdb " + output_file + "_internal.pdb " + output_file + "_surface.pdb";
 
     result = std::system(reformat_python.c_str());
 
