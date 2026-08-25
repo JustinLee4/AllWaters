@@ -104,7 +104,7 @@ void writeClusteredPDB(const std::vector<std::vector<Atom>>& clusters,
         for (const auto& atom : clusters[i]) {
             std::array<double, 3> c = atom.getCoords();
             
-            fprintf(pFile, "HETATM%5d  %-3s %3s A%4d    %8.3f%8.3f%8.3f  1.00%6.2f          %s\n",
+            fprintf(pFile, "HETATM%5d  %-3s %3s A%4d    %8.3f%8.3f%8.3f  1.00%6.2f           %s\n",
                     atomGlobalCount % 100000, 
                     atom.get_atomname().c_str(),
                     atom.get_resname().c_str(),

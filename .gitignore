@@ -9,10 +9,22 @@ src/find_clusters.cpp
 temp/
 build/
 
+# Compiled binaries (produced by the Makefile)
+main
+main_debug
+
+# Input structures and generated data / surface meshes.
+# Files already tracked before these rules stay tracked; these only stop new
+# local run artifacts from being picked up.
+pdbfiles/
+results/
+vert_files/
+
 # PDB Files
 *_all-internals.pdb
 *_in.pdb
 *_out.pdb
+*_colored.pdb
 
 *.DS_Store
 
