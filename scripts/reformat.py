@@ -67,7 +67,9 @@ def format_pdb_line(atom_data, serial, res_seq):
     b_factor = atom_data.get('b_factor', 0.0) 
     
     safe_res_seq = ((res_seq - 1) % 9999) + 1
-    
+    # PDB serial is a 5-column field; wrap it or every column after it shifts right
+    safe_serial = ((serial - 1) % 99999) + 1
+
     if len(name) == 1: fmt_name = f" {name}  "
     elif len(name) == 2: fmt_name = f" {name} "
     elif len(name) == 3: fmt_name = f" {name}"
@@ -77,7 +79,7 @@ def format_pdb_line(atom_data, serial, res_seq):
 
     line = (
         f"HETATM"             
-        f"{serial:>5}"        
+        f"{safe_serial:>5}"
         f" "                  
         f"{fmt_name:<4}"      
         f" "                  
